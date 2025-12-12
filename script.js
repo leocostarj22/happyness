@@ -67,8 +67,9 @@ cachedState = JSON.parse(JSON.stringify(initialGameState));
 // 1. Buscar estado do servidor (Polling)
 async function fetchServerState() {
     try {
-        // Adiciona timestamp para evitar cache do navegador
-        const res = await fetch(`${API_URL}get.php?t=${Date.now()}`);
+        // Adiciona timestamp e random para evitar cache do navegador e proxies agressivos
+        const unique = Date.now() + '_' + Math.random();
+        const res = await fetch(`${API_URL}get.php?t=${unique}`);
         if (res.ok) {
             const text = await res.text();
             try {
@@ -511,12 +512,12 @@ function initPlayer() {
 
         // SE o estado visual crítico é idêntico ao último renderizado, PARE AQUI.
         // Isso impede que o dropdown feche na cara do usuário.
-        if (currentStateSignature === lastRenderedStateJSON) {
+        // if (currentStateSignature === lastRenderedStateJSON) {
             // Pequena exceção: Se estivermos no lobby, queremos ver msg dinâmica se mudasse
-            if (state.status !== 'lobby') return; 
+            // if (state.status !== 'lobby') return; 
             // Mas se a msg do lobby não muda, também retornamos
-            if (document.getElementById('lobby-msg').innerText === "Aguardando o início...") return;
-        }
+            // if (document.getElementById('lobby-msg').innerText === "Aguardando o início...") return;
+        // }
         
         lastRenderedStateJSON = currentStateSignature;
         
@@ -536,13 +537,18 @@ function initPlayer() {
             showScreen('lobby');
             document.getElementById('lobby-msg').innerText = "Aguardando o início...";
             
+            // Forçar limpeza visual se vier de um estado anterior
+            if (lastRenderedStateJSON.includes('question')) {
+                 lastRenderedStateJSON = ''; // Força re-render completo
+            }
+
             // Botão de Debug/Resync para casos extremos
             let resyncBtn = document.getElementById('btn-resync');
             if (!resyncBtn) {
                 resyncBtn = document.createElement('button');
                 resyncBtn.id = 'btn-resync';
                 resyncBtn.innerText = '↻ Sincronizar';
-                resyncBtn.style.cssText = "margin-top:20px; padding:5px 10px; background:rgba(255,255,255,0.2); border:1px solid white; color:white; border-radius:5px;";
+                resyncBtn.style.cssText = "margin-top:20px; padding:10px 20px; background:rgba(255,255,255,0.2); border:1px solid white; color:white; border-radius:5px; font-size:16px; cursor:pointer;";
                 resyncBtn.onclick = () => {
                     cachedState = null;
                     fetchServerState();
