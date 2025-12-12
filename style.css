@@ -1,0 +1,314 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0f0f1a; /* Darker background */
+    color: #fff;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow-x: hidden;
+    
+    /* Imagem de fundo festiva com sobreposição escura para legibilidade */
+    background: linear-gradient(rgba(15, 15, 26, 0.85), rgba(15, 15, 26, 0.95)), 
+                url('img/lisboa.jpg');
+    
+    /*
+    background: url('img/lisboa.jpg');
+     */
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+/* --- Common Components --- */
+.hidden { display: none !important; }
+
+h1, h2, h3 {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 10px 0;
+}
+
+h1 {
+    color: #e94560;
+    text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+    font-size: 2.5rem;
+}
+
+button {
+    background-color: #e94560;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+    border: none;
+    border-radius: 8px;
+    padding: 15px;
+    font-size: 16px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+button:hover {
+    background-color: #ff2e63;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(233, 69, 96, 0.4);
+}
+
+button:active { transform: scale(0.98); }
+
+button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: #16213e;
+    color: white;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+/* --- Admin Panel --- */
+#admin-container {
+    width: 90%;
+    max-width: 800px;
+    background: #1a1a2e;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    border: 1px solid #333;
+}
+
+.admin-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+}
+
+.question-item {
+    background: #16213e;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid #e94560;
+}
+
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+/* --- Dashboard (Telão) --- */
+#dashboard-container {
+    width: 95%;
+    max-width: 1200px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.qr-section {
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    display: inline-block;
+    margin: 20px 0;
+    box-shadow: 0 0 30px rgba(233, 69, 96, 0.3);
+}
+
+.qr-section img {
+    display: block;
+}
+
+.big-question {
+    font-size: 3rem;
+    margin-bottom: 40px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.big-timer {
+    font-size: 4rem;
+    font-weight: bold;
+    color: #ffcc00;
+    margin: 20px;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Leaderboard Enhanced */
+.leaderboard {
+    width: 100%;
+    margin-top: 30px;
+}
+
+.player-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    opacity: 0;
+    animation: slideIn 0.5s forwards;
+}
+
+@keyframes slideIn {
+    to { opacity: 1; transform: translateX(0); }
+    from { opacity: 0; transform: translateX(-20px); }
+}
+
+.player-rank {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #ffd700;
+}
+
+.player-name {
+    width: 150px;
+    text-align: left;
+    font-weight: bold;
+    font-size: 1.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bar-track {
+    flex-grow: 1;
+    background: rgba(255,255,255,0.1);
+    height: 40px;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e94560, #ff2e63, #ff9966);
+    background-size: 200% 100%;
+    animation: gradientMove 2s infinite linear;
+    width: 0%;
+    transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-right: 15px;
+    font-weight: bold;
+    font-size: 1rem;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+@keyframes gradientMove {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+/* --- Player (Mobile) --- */
+#player-container {
+    width: 100%;
+    max-width: 450px;
+    padding: 20px;
+    text-align: center;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* Stack on mobile for better touch targets */
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.option-btn {
+    background-color: #16213e;
+    border: 2px solid #333;
+    height: 70px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.option-btn:active {
+    background-color: #e94560;
+    border-color: #e94560;
+}
+
+.powerup-btn {
+    background: linear-gradient(45deg, #ffcc00, #ff6600);
+    margin-bottom: 20px;
+    font-weight: 900;
+    text-transform: uppercase;
+    animation: pop 2s infinite;
+}
+
+@keyframes pop {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+.feedback-screen {
+    text-align: center;
+    padding: 20px;
+    border-radius: 15px;
+    background: rgba(255,255,255,0.1);
+    margin-top: 20px;
+}
+
+.score-gain {
+    font-size: 3rem;
+    color: #00ff88;
+    font-weight: bold;
+    animation: floatUp 1s ease-out;
+}
+
+@keyframes floatUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#vote-select {
+    width: 100%;
+    padding: 20px;
+    font-size: 1.2rem;
+    border-radius: 10px;
+    background: #16213e;
+    color: white;
+    border: 2px solid #e94560;
+    margin-bottom: 20px;
+}
+
+#vote-select option {
+    background: #16213e;
+    padding: 10px;
+}

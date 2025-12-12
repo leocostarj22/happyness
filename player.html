@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Jogador</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="player-container">
+        
+        <!-- 1. Login -->
+        <div id="login-screen">
+            <h1>Quiz Party 🎈</h1>
+            <p>Entre com seu nome e apelido:</p>
+            <input type="text" id="username" placeholder="Seu apelido..." autocomplete="off">
+            <button id="btn-join">ENTRAR NA FESTA</button>
+        </div>
+
+        <!-- 2. Lobby / Espera -->
+        <div id="lobby-wait" class="hidden">
+            <h2 style="color: #00ff88">Você está dentro!</h2>
+            <p id="lobby-msg" style="font-size: 1.2rem; margin-top: 20px;">Olhe para o telão...</p>
+            <div style="font-size: 3rem; margin-top: 30px;">👀</div>
+        </div>
+
+        <!-- 3. Jogo -->
+        <div id="game-screen" class="hidden">
+            <button id="btn-powerup" class="powerup-btn">⚡ DOBRAR PONTOS ⚡</button>
+            <h2 id="question-text">Pergunta...</h2>
+            <div id="options-container" class="options-grid">
+                <!-- Botões gerados via JS -->
+            </div>
+        </div>
+
+        <!-- 4. Feedback (Resultado da Rodada) -->
+        <div id="feedback-screen" class="hidden">
+            <h1>Pontuação Atual</h1>
+            <div class="score-gain" id="my-score">0</div>
+            <p>Aguarde a próxima pergunta...</p>
+        </div>
+
+        <!-- 5. Fim de Jogo -->
+        <div id="finished-screen" class="hidden">
+            <h1>FIM DE JOGO!</h1>
+            <p>Confira o pódio no telão!</p>
+            <p>Obrigado por participar 🎉</p>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

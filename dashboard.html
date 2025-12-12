@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Party - Telão</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="dashboard-container">
+        
+        <!-- Tela 1: Lobby -->
+        <div id="dashboard-lobby">
+            <h1>🎉 BEM-VINDO À FESTA! 🎉</h1>
+            <p style="font-size: 1.5rem">Aponte a câmera para entrar:</p>
+            
+            <div class="qr-section">
+                <img id="qr-code-img" src="" alt="QR Code" width="250" height="250">
+            </div>
+            
+            <h2 id="player-count" style="color: #00ff88; margin-top: 20px;">0 Jogadores Prontos</h2>
+            <p>Aguardando o Admin iniciar...</p>
+        </div>
+
+        <!-- Tela 2: Pergunta -->
+        <div id="dashboard-question" class="hidden">
+            <h1 class="big-question" id="big-q-text">Carregando pergunta...</h1>
+            <div class="big-timer" id="timer">10s</div>
+            <p style="font-size: 1.2rem; color: #aaa">Responda rápido para ganhar mais pontos!</p>
+        </div>
+
+        <!-- Tela 3: Leaderboard -->
+        <div id="dashboard-leaderboard" class="hidden">
+            <h1>🏆 RANKING 🏆</h1>
+            <div id="leaderboard-list" class="leaderboard">
+                <!-- Barras via JS -->
+            </div>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

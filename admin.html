@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Party - Admin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Tela de Login -->
+    <div id="login-container" style="max-width: 400px; margin: 100px auto; padding: 20px; background: #16213e; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+        <h1 style="color: #e94560;">🔐 Acesso Admin</h1>
+        <input type="text" id="admin-user" placeholder="Usuário" style="width: 80%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none;">
+        <input type="password" id="admin-pass" placeholder="Senha" style="width: 80%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none;">
+        <button id="btn-login" style="width: 85%; background: #0f3460; color: white; padding: 10px; margin-top: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">ENTRAR</button>
+    </div>
+
+    <div id="admin-container" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>🔧 Painel de Controle</h1>
+            <button id="btn-logout" style="background: #333; font-size: 0.8rem; padding: 5px 10px;">Sair</button>
+        </div>
+        <div id="game-status" style="color: #00ff88; font-weight: bold; margin-bottom: 20px;">Status: SETUP</div>
+
+        <!-- Seção de Controle -->
+        <div class="admin-section">
+            <h3>🎮 Modo de Jogo</h3>
+            <div class="controls-grid">
+                <button id="btn-mode-quiz" style="background: #6610f2">Modo Quiz (Perguntas)</button>
+                <button id="btn-mode-voting" style="background: #d63384">Modo Votação (Awards)</button>
+            </div>
+            
+            <h3 style="margin-top:20px">⏯ Controle da Rodada</h3>
+            <div class="controls-grid">
+                <button id="btn-start-lobby" style="background: #007bff">1. Abrir Lobby</button>
+                <button id="btn-next-q" style="background: #28a745">2. Próxima Pergunta</button>
+                <button id="btn-show-round-results" style="background: #ffc107; color: black">3. Ranking (Rodada)</button>
+                <button id="btn-show-general-results" style="background: #fd7e14; color: black">4. Ranking (Geral)</button>
+                <button id="btn-reset" style="background: #dc3545">⚠ Resetar Tudo</button>
+            </div>
+        </div>
+
+        <!-- Seção de Personalização -->
+        <div class="admin-section">
+            <h3>⚙️ Personalização</h3>
+            <div style="display: grid; gap: 10px;">
+                <label>
+                    Logomarca (URL):
+                    <input type="text" id="conf-logo" placeholder="img/logo.png ou https://...">
+                </label>
+                <label>
+                    Imagem de Fundo (URL):
+                    <input type="text" id="conf-bg" placeholder="img/fundo.jpg ou https://...">
+                </label>
+                <label>
+                    Mensagem de Boas-vindas:
+                    <input type="text" id="conf-title" placeholder="Ex: BEM-VINDO À FESTA!">
+                </label>
+                <button id="btn-save-conf" style="background: #17a2b8;">Salvar Personalização</button>
+            </div>
+        </div>
+
+        <!-- Seção de Perguntas -->
+        <div class="admin-section">
+            <h3>📝 Gerenciar Perguntas</h3>
+            
+            <div id="add-question-form" style="background: #16213e; padding: 15px; border-radius: 8px;">
+                <input type="text" id="new-q-text" placeholder="Digite a pergunta...">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <input type="text" id="new-opt-1" placeholder="Opção 1 (Índice 0)">
+                    <input type="text" id="new-opt-2" placeholder="Opção 2 (Índice 1)">
+                    <input type="text" id="new-opt-3" placeholder="Opção 3 (Índice 2)">
+                    <input type="text" id="new-opt-4" placeholder="Opção 4 (Índice 3)">
+                </div>
+                <select id="new-correct">
+                    <option value="0">Correta: Opção 1</option>
+                    <option value="1">Correta: Opção 2</option>
+                    <option value="2">Correta: Opção 3</option>
+                    <option value="3">Correta: Opção 4</option>
+                </select>
+                <button id="btn-add-q">Adicionar Pergunta</button>
+            </div>
+
+            <div id="question-list" style="margin-top: 20px;">
+                <!-- Lista gerada via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
