@@ -9,8 +9,24 @@ $file = 'data.json';
 
 // Se o arquivo não existir, retorna erro ou cria um padrão
 if (!file_exists($file)) {
-    echo json_encode(["error" => "No data found"]);
-    exit;
+    // Se não existe, cria um estado padrão
+    $defaultState = [
+        "status" => "setup",
+        "mode" => "quiz",
+        "leaderboardType" => "general",
+        "currentQuestionIndex" => 0,
+        "questionStartTime" => 0,
+        "questions" => [],
+        "currentVotes" => [],
+        "players" => [],
+        "settings" => [
+            "logo" => "",
+            "background" => "",
+            "welcomeMsg" => "🎉 BEM-VINDO À FESTA! 🎉"
+        ]
+    ];
+    file_put_contents($file, json_encode($defaultState));
+    chmod($file, 0666);
 }
 
 // Lê o arquivo, adiciona o timestamp do servidor e retorna

@@ -15,6 +15,12 @@ if (!$newData) {
 
 $file = 'data.json';
 
+// Tenta criar o arquivo se não existir
+if (!file_exists($file)) {
+    file_put_contents($file, json_encode($newData));
+    chmod($file, 0666); // Permissão de leitura/escrita para todos
+}
+
 // 2. Salva no arquivo de forma segura (Lock)
 $fp = fopen($file, 'w');
 if ($fp) {

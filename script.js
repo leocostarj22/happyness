@@ -2,6 +2,23 @@
 const API_URL = 'api/'; // Caminho relativo para a pasta api
 let cachedState = null; // Estado em memória sincronizado com o servidor
 let serverTimeOffset = 0; // Sincronização de relógio (Server Time - Local Time)
+let connectionErrorCount = 0;
+
+// Cria elemento de status de conexão
+const connectionStatusEl = document.createElement('div');
+connectionStatusEl.style.cssText = 'position:fixed; bottom:5px; right:5px; font-size:10px; color:white; background:rgba(0,0,0,0.5); padding:2px 5px; border-radius:3px; z-index:9999; pointer-events:none;';
+document.body.appendChild(connectionStatusEl);
+
+function updateConnectionStatus(status, msg) {
+    if (status === 'ok') {
+        connectionStatusEl.style.color = '#00ff88';
+        connectionStatusEl.innerText = '● Conectado';
+        connectionErrorCount = 0;
+    } else {
+        connectionStatusEl.style.color = '#ff4444';
+        connectionStatusEl.innerText = '● Desconectado (' + msg + ')';
+    }
+}
 
 const votingQuestionsList = [
     "Quem é um Emoji Humano (quem tem as expressões mais icónicas)?",
@@ -53,20 +70,38 @@ async function fetchServerState() {
         // Adiciona timestamp para evitar cache do navegador
         const res = await fetch(`${API_URL}get.php?t=${Date.now()}`);
         if (res.ok) {
-            const data = await res.json();
-            if (data && !data.error) {
-                // Sincroniza relógio se o servidor enviar o tempo
-                if (data.serverTime) {
-                    serverTimeOffset = data.serverTime - Date.now();
+            const text = await res.text();
+            try {
+                const data = JSON.parse(text);
+                if (data && !data.error) {
+                    // Sincroniza relógio se o servidor enviar o tempo
+                    if (data.serverTime) {
+                        serverTimeOffset = data.serverTime - Date.now();
+                    }
+                    // Atualiza o cache local
+                    cachedState = data;
+                    // Dispara evento para atualizar telas
+                    window.dispatchEvent(new Event('server_update'));
+                    updateConnectionStatus('ok');
+                } else {
+                    console.error("Dados inválidos do servidor:", data);
                 }
-                // Atualiza o cache local
-                cachedState = data;
-                // Dispara evento para atualizar telas
-                window.dispatchEvent(new Event('server_update'));
+            } catch (e) {
+                console.error("Erro JSON:", e, text);
+                updateConnectionStatus('error', 'JSON Inválido');
             }
+        } else {
+            updateConnectionStatus('error', 'HTTP ' + res.status);
         }
     } catch (e) {
         console.error("Erro de conexão:", e);
+        connectionErrorCount++;
+        updateConnectionStatus('error', 'Sem rede');
+        
+        // Se falhar muitas vezes, alerta o usuário (apenas player)
+        if (connectionErrorCount === 5 && !document.getElementById('admin-container')) {
+            alert("Perda de conexão com o servidor! Verifique sua internet.");
+        }
     }
 }
 
