@@ -859,7 +859,7 @@ function initDashboard() {
         }
     }
 
-    window.addEventListener('storage', updateDashboard);
+    window.addEventListener('server_update', updateDashboard);
     setInterval(updateDashboard, 500); // Atualização mais rápida para timer
     updateDashboard();
 }
