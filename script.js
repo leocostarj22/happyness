@@ -493,9 +493,10 @@ function initPlayer() {
         
         // Verifica se o tempo acabou (10s Quiz / 30s Votação)
         const limitTime = state.mode === 'voting' ? 30 : 10;
-        const now = Date.now() + serverTimeOffset; // Tempo sincronizado
-        const elapsed = (now - state.questionStartTime) / 1000;
-        const timeIsUp = state.status === 'question' && elapsed >= limitTime;
+        const now = Date.now() + serverTimeOffset; 
+        // Adiciona uma tolerância de 2 segundos para latência
+        const elapsed = Math.max(0, (now - state.questionStartTime) / 1000);
+        const timeIsUp = state.status === 'question' && elapsed >= (limitTime + 2);
 
         // Criamos uma assinatura do estado atual focada no que impacta a UI
         // Removemos questionStartTime para evitar re-render só pelo timer (se houvesse lógica de timer aqui)
@@ -534,6 +535,21 @@ function initPlayer() {
 
             showScreen('lobby');
             document.getElementById('lobby-msg').innerText = "Aguardando o início...";
+            
+            // Botão de Debug/Resync para casos extremos
+            let resyncBtn = document.getElementById('btn-resync');
+            if (!resyncBtn) {
+                resyncBtn = document.createElement('button');
+                resyncBtn.id = 'btn-resync';
+                resyncBtn.innerText = '↻ Sincronizar';
+                resyncBtn.style.cssText = "margin-top:20px; padding:5px 10px; background:rgba(255,255,255,0.2); border:1px solid white; color:white; border-radius:5px;";
+                resyncBtn.onclick = () => {
+                    cachedState = null;
+                    fetchServerState();
+                    alert("Sincronizando...");
+                };
+                document.getElementById('lobby-wait').appendChild(resyncBtn);
+            }
         } 
         else if (state.status === 'question') {
             // Se o tempo acabou, mostra mensagem de bloqueio
