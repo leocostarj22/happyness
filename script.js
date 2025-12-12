@@ -418,6 +418,29 @@ function initPlayer() {
     function showScreen(name) {
         Object.values(screens).forEach(s => s.classList.add('hidden'));
         screens[name].classList.remove('hidden');
+
+        // Garante que o botão de sincronização exista sempre que a tela de lobby aparecer
+        if (name === 'lobby') {
+            let resyncBtn = document.getElementById('btn-resync');
+            if (!resyncBtn) {
+                resyncBtn = document.createElement('button');
+                resyncBtn.id = 'btn-resync';
+                resyncBtn.innerText = '↻ FORÇAR ATUALIZAÇÃO';
+                resyncBtn.style.cssText = "display:block; width:90%; max-width:300px; margin:30px auto; padding:15px; background:#ff4757; color:white; border:none; border-radius:50px; font-size:14px; font-weight:bold; box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4); cursor:pointer; text-transform: uppercase;";
+                resyncBtn.onclick = () => {
+                    cachedState = null;
+                    resyncBtn.innerText = 'Atualizando...';
+                    resyncBtn.style.opacity = '0.7';
+                    fetchServerState().then(() => {
+                        setTimeout(() => {
+                            resyncBtn.innerText = '↻ FORÇAR ATUALIZAÇÃO';
+                            resyncBtn.style.opacity = '1';
+                        }, 500);
+                    });
+                };
+                document.getElementById('lobby-wait').appendChild(resyncBtn);
+            }
+        }
     }
 
     // Login
@@ -540,21 +563,6 @@ function initPlayer() {
             // Forçar limpeza visual se vier de um estado anterior
             if (lastRenderedStateJSON.includes('question')) {
                  lastRenderedStateJSON = ''; // Força re-render completo
-            }
-
-            // Botão de Debug/Resync para casos extremos
-            let resyncBtn = document.getElementById('btn-resync');
-            if (!resyncBtn) {
-                resyncBtn = document.createElement('button');
-                resyncBtn.id = 'btn-resync';
-                resyncBtn.innerText = '↻ Sincronizar';
-                resyncBtn.style.cssText = "margin-top:20px; padding:10px 20px; background:rgba(255,255,255,0.2); border:1px solid white; color:white; border-radius:5px; font-size:16px; cursor:pointer;";
-                resyncBtn.onclick = () => {
-                    cachedState = null;
-                    fetchServerState();
-                    alert("Sincronizando...");
-                };
-                document.getElementById('lobby-wait').appendChild(resyncBtn);
             }
         } 
         else if (state.status === 'question') {
