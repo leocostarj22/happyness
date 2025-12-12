@@ -17,13 +17,24 @@ $file = 'data.json';
 
 // 2. Salva no arquivo de forma segura (Lock)
 $fp = fopen($file, 'w');
-if (flock($fp, LOCK_EX)) {
-    fwrite($fp, json_encode($newData, JSON_PRETTY_PRINT));
-    flock($fp, LOCK_UN);
-    echo json_encode(["success" => true]);
+if ($fp) {
+    if (flock($fp, LOCK_EX)) {
+        $writeResult = fwrite($fp, json_encode($newData, JSON_PRETTY_PRINT));
+        flock($fp, LOCK_UN);
+        
+        if ($writeResult !== false) {
+            echo json_encode(["success" => true]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Write failed"]);
+        }
+    } else {
+        http_response_code(500);
+        echo json_encode(["error" => "Could not lock file"]);
+    }
+    fclose($fp);
 } else {
     http_response_code(500);
-    echo json_encode(["error" => "Could not lock file"]);
+    echo json_encode(["error" => "Could not open file for writing. Check permissions."]);
 }
-fclose($fp);
 ?>

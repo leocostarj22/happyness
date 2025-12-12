@@ -1,6 +1,7 @@
 // --- CONFIGURAÇÃO GLOBAL ---
 const API_URL = 'api/'; // Caminho relativo para a pasta api
 let cachedState = null; // Estado em memória sincronizado com o servidor
+let serverTimeOffset = 0; // Sincronização de relógio (Server Time - Local Time)
 
 const votingQuestionsList = [
     "Quem é um Emoji Humano (quem tem as expressões mais icónicas)?",
@@ -54,6 +55,10 @@ async function fetchServerState() {
         if (res.ok) {
             const data = await res.json();
             if (data && !data.error) {
+                // Sincroniza relógio se o servidor enviar o tempo
+                if (data.serverTime) {
+                    serverTimeOffset = data.serverTime - Date.now();
+                }
                 // Atualiza o cache local
                 cachedState = data;
                 // Dispara evento para atualizar telas
@@ -80,14 +85,15 @@ async function saveGameState(state) {
     window.dispatchEvent(new Event('server_update'));
 
     try {
-        await fetch(`${API_URL}admin_update.php`, {
+        const res = await fetch(`${API_URL}admin_update.php`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(state)
         });
+        if (!res.ok) throw new Error("Falha na escrita do arquivo");
     } catch (e) {
         console.error("Erro ao salvar:", e);
-        alert("Erro de conexão ao salvar! Verifique a internet.");
+        alert("ERRO AO SALVAR NO SERVIDOR! Verifique a conexão ou permissões.");
     }
 }
 
@@ -319,7 +325,7 @@ function initAdmin() {
         }
 
         state.status = 'question';
-        state.questionStartTime = Date.now();
+        state.questionStartTime = Date.now() + serverTimeOffset; // Usa tempo sincronizado
         state.currentVotes = {}; // Resetar votos da rodada
         // Resetar roundScore de todos os players
         Object.values(state.players).forEach(p => p.roundScore = 0);
@@ -452,7 +458,8 @@ function initPlayer() {
         
         // Verifica se o tempo acabou (10s Quiz / 30s Votação)
         const limitTime = state.mode === 'voting' ? 30 : 10;
-        const elapsed = (Date.now() - state.questionStartTime) / 1000;
+        const now = Date.now() + serverTimeOffset; // Tempo sincronizado
+        const elapsed = (now - state.questionStartTime) / 1000;
         const timeIsUp = state.status === 'question' && elapsed >= limitTime;
 
         // Criamos uma assinatura do estado atual focada no que impacta a UI
@@ -615,7 +622,7 @@ function initPlayer() {
         // Lógica Quiz (answerData é index)
         const idx = answerData;
         const q = state.questions[state.currentQuestionIndex];
-        const now = Date.now();
+        const now = Date.now() + serverTimeOffset;
         
         // Cálculo de Pontos (Velocidade)
         // Máximo 10s para bônus total.
@@ -842,7 +849,8 @@ function initDashboard() {
             
             // Timer Visual
             const limitTime = state.mode === 'voting' ? 30 : 10;
-            const elapsed = Math.floor((Date.now() - state.questionStartTime) / 1000);
+            const now = Date.now() + serverTimeOffset;
+            const elapsed = Math.floor((now - state.questionStartTime) / 1000);
             const remaining = Math.max(0, limitTime - elapsed);
             
             document.getElementById('timer').innerText = remaining + "s";
