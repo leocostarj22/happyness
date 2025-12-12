@@ -9,6 +9,8 @@ $data = $input['data'] ?? [];
 
 $file = 'data.json';
 
+clearstatcache();
+
 // Abre para leitura e escrita
 $fp = fopen($file, 'r+');
 

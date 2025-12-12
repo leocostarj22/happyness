@@ -15,6 +15,9 @@ if (!$newData) {
 
 $file = 'data.json';
 
+// Limpa cache de status
+clearstatcache();
+
 // Tenta criar o arquivo se não existir
 if (!file_exists($file)) {
     file_put_contents($file, json_encode($newData));

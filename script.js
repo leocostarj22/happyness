@@ -1,5 +1,8 @@
 // --- CONFIGURAÇÃO GLOBAL ---
-const API_URL = 'api/'; // Caminho relativo para a pasta api
+// Detecta a URL base automaticamente para evitar problemas de caminho relativo (ex: /happyness/dashboard.html -> /happyness/api/)
+const API_BASE = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+const API_URL = API_BASE + 'api/'; 
+
 let cachedState = null; // Estado em memória sincronizado com o servidor
 let serverTimeOffset = 0; // Sincronização de relógio (Server Time - Local Time)
 let connectionErrorCount = 0;
@@ -69,7 +72,13 @@ async function fetchServerState() {
     try {
         // Adiciona timestamp e random para evitar cache do navegador e proxies agressivos
         const unique = Date.now() + '_' + Math.random();
-        const res = await fetch(`${API_URL}get.php?t=${unique}`);
+        const res = await fetch(`${API_URL}get.php?t=${unique}`, {
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
         if (res.ok) {
             const text = await res.text();
             try {
