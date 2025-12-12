@@ -1,5 +1,6 @@
 // --- CONFIGURAÇÃO GLOBAL ---
-const DB_KEY = 'quiz_party_data';
+const API_URL = 'api/'; // Caminho relativo para a pasta api
+let cachedState = null; // Estado em memória sincronizado com o servidor
 
 const votingQuestionsList = [
     "Quem é um Emoji Humano (quem tem as expressões mais icónicas)?",
@@ -23,7 +24,7 @@ const votingQuestionsList = [
     "Com quem é que planearias um assalto?"
 ];
 
-// Estado Inicial do Jogo
+// Estado Inicial do Jogo (Fallback)
 const initialGameState = {
     status: 'setup', // setup, lobby, question, result, finished
     mode: 'quiz', // 'quiz' or 'voting'
@@ -40,16 +41,74 @@ const initialGameState = {
     }
 };
 
-// --- FUNÇÕES DE BANCO DE DADOS (LOCALSTORAGE) ---
-function getGameState() {
-    const data = localStorage.getItem(DB_KEY);
-    return data ? JSON.parse(data) : initialGameState;
+// Inicializa o cache com o estado padrão
+cachedState = JSON.parse(JSON.stringify(initialGameState));
+
+// --- FUNÇÕES DE COMUNICAÇÃO COM O SERVIDOR (API) ---
+
+// 1. Buscar estado do servidor (Polling)
+async function fetchServerState() {
+    try {
+        // Adiciona timestamp para evitar cache do navegador
+        const res = await fetch(`${API_URL}get.php?t=${Date.now()}`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data && !data.error) {
+                // Atualiza o cache local
+                cachedState = data;
+                // Dispara evento para atualizar telas
+                window.dispatchEvent(new Event('server_update'));
+            }
+        }
+    } catch (e) {
+        console.error("Erro de conexão:", e);
+    }
 }
 
-function saveGameState(state) {
-    localStorage.setItem(DB_KEY, JSON.stringify(state));
-    // Notifica outras abas
-    window.dispatchEvent(new Event('storage'));
+// Inicia o loop de sincronização (1 segundo)
+setInterval(fetchServerState, 1000);
+
+// Retorna o estado instantâneo (do cache)
+function getGameState() {
+    return cachedState || initialGameState;
+}
+
+// 2. Salvar estado (Apenas ADMIN usa isso para controlar o jogo)
+async function saveGameState(state) {
+    // Atualiza cache local imediatamente para feedback rápido
+    cachedState = state;
+    window.dispatchEvent(new Event('server_update'));
+
+    try {
+        await fetch(`${API_URL}admin_update.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(state)
+        });
+    } catch (e) {
+        console.error("Erro ao salvar:", e);
+        alert("Erro de conexão ao salvar! Verifique a internet.");
+    }
+}
+
+// 3. Ações do Jogador (Atômicas para evitar conflitos)
+async function sendPlayerAction(action, data) {
+    try {
+        const res = await fetch(`${API_URL}player_action.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action, data })
+        });
+        const json = await res.json();
+        if (json.success && json.newState) {
+            cachedState = json.newState;
+            window.dispatchEvent(new Event('server_update'));
+            return true;
+        }
+    } catch (e) {
+        console.error("Erro na ação do jogador:", e);
+    }
+    return false;
 }
 
 // Resetar Jogo (Admin)
@@ -57,7 +116,7 @@ function resetGame() {
     const state = JSON.parse(JSON.stringify(initialGameState)); // Clone
     state.status = 'setup';
     saveGameState(state);
-    location.reload();
+    setTimeout(() => location.reload(), 500);
 }
 
 // --- LÓGICA DO ADMIN ---
@@ -295,7 +354,8 @@ function initAdmin() {
     };
 
     renderQuestions();
-    window.addEventListener('storage', renderQuestions);
+    // Substitui 'storage' por 'server_update'
+    window.addEventListener('server_update', renderQuestions);
 }
 
 // --- LÓGICA DO JOGADOR (PLAYER) ---
@@ -353,21 +413,22 @@ function initPlayer() {
         }
     }
     applyCustomization();
-    window.addEventListener('storage', applyCustomization);
+    window.addEventListener('server_update', applyCustomization);
 
-    document.getElementById('btn-join').addEventListener('click', () => {
+    document.getElementById('btn-join').addEventListener('click', async () => {
         const name = document.getElementById('username').value.trim();
         if (!name) return alert("Nome obrigatório!");
         
+        // Bloqueia botão
+        const btn = document.getElementById('btn-join');
+        btn.disabled = true;
+        btn.innerText = "Entrando...";
+
+        // Envia ação para o servidor
+        await sendPlayerAction('join', { name: name });
+
         currentPlayer = name;
         localStorage.setItem('player_name', name);
-        
-        // Registrar no server
-        const state = getGameState();
-        if (!state.players[name]) {
-            state.players[name] = { score: 0, votesReceived: 0, roundScore: 0 };
-            saveGameState(state);
-        }
         
         checkGameState();
     });
@@ -538,23 +599,15 @@ function initPlayer() {
             // answerData é o nome do jogador votado
             const votedPerson = answerData;
             
-            // Incrementa contagem de votos da rodada
-            if (!state.currentVotes[votedPerson]) state.currentVotes[votedPerson] = 0;
-            state.currentVotes[votedPerson]++;
-            
-            // Incrementa total acumulado do jogador votado
-            if (state.players[votedPerson]) {
-                if(!state.players[votedPerson].votesReceived) state.players[votedPerson].votesReceived = 0;
-                state.players[votedPerson].votesReceived++;
-            }
+            // Envia Voto via API
+            sendPlayerAction('vote', { votedPerson: votedPerson });
 
-            saveGameState(state);
-            
             // Marca como respondido na sessão usando o índice
             lastAnsweredQuestionIndex = state.currentQuestionIndex;
             sessionStorage.setItem('last_answered_index', lastAnsweredQuestionIndex);
             
             // Força atualização imediata da tela para mostrar feedback
+            // (O polling vai confirmar depois, mas o feedback visual é imediato)
             checkGameState();
             return;
         }
@@ -583,11 +636,10 @@ function initPlayer() {
             }
         }
 
-        // Atualiza Estado
-        if (!state.players[currentPlayer]) state.players[currentPlayer] = { score: 0, roundScore: 0 };
-        state.players[currentPlayer].score += points;
-        state.players[currentPlayer].roundScore = points; // Salva pontuação da rodada
-        saveGameState(state);
+        // Envia Pontuação via API
+        if (points > 0) {
+            sendPlayerAction('score', { player: currentPlayer, points: points });
+        }
 
         lastAnsweredQuestionIndex = state.currentQuestionIndex;
         sessionStorage.setItem('last_answered_index', lastAnsweredQuestionIndex);
@@ -602,8 +654,8 @@ function initPlayer() {
         checkGameState();
     }
 
-    window.addEventListener('storage', checkGameState);
-    setInterval(checkGameState, 1000); // Polling de segurança
+    window.addEventListener('server_update', checkGameState);
+    // setInterval(checkGameState, 1000); // Polling de segurança já é feito pelo fetchServerState global
     checkGameState();
 }
 

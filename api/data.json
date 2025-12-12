@@ -1,0 +1,15 @@
+{
+    "status": "setup",
+    "mode": "quiz",
+    "leaderboardType": "general",
+    "currentQuestionIndex": 0,
+    "questionStartTime": 0,
+    "questions": [],
+    "currentVotes": {},
+    "players": {},
+    "settings": {
+        "logo": "",
+        "background": "",
+        "welcomeMsg": "🎉 BEM-VINDO À FESTA! 🎉"
+    }
+}
