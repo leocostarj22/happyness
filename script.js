@@ -636,7 +636,9 @@ function initPlayer() {
             // Só importa se o numero de jogadores mudar quando estamos no lobby ou votação
             playersCount: (state.status === 'lobby' || (state.status === 'question' && state.mode === 'voting')) ? Object.keys(state.players).length : 0,
             // Importante: se o jogador já respondeu, a tela muda para lobby
-            hasAnswered: state.currentQuestionIndex === lastAnsweredQuestionIndex
+            hasAnswered: state.currentQuestionIndex === lastAnsweredQuestionIndex,
+            // Importante: O nome do jogador atual deve fazer parte da assinatura para detectar login/logout
+            currentPlayer: currentPlayer
         });
 
         // SE o estado visual crítico é idêntico ao último renderizado, PARE AQUI.
