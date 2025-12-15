@@ -539,17 +539,16 @@ function initPlayer() {
             mode: state.mode,
             timeIsUp: timeIsUp,
             // Só importa se o numero de jogadores mudar quando estamos no lobby ou votação
-            playersCount: (state.status === 'lobby' || (state.status === 'question' && state.mode === 'voting')) ? Object.keys(state.players).length : 0
+            playersCount: (state.status === 'lobby' || (state.status === 'question' && state.mode === 'voting')) ? Object.keys(state.players).length : 0,
+            // Importante: se o jogador já respondeu, a tela muda para lobby
+            hasAnswered: state.currentQuestionIndex === lastAnsweredQuestionIndex
         });
 
         // SE o estado visual crítico é idêntico ao último renderizado, PARE AQUI.
         // Isso impede que o dropdown feche na cara do usuário.
-        // if (currentStateSignature === lastRenderedStateJSON) {
-            // Pequena exceção: Se estivermos no lobby, queremos ver msg dinâmica se mudasse
-            // if (state.status !== 'lobby') return; 
-            // Mas se a msg do lobby não muda, também retornamos
-            // if (document.getElementById('lobby-msg').innerText === "Aguardando o início...") return;
-        // }
+        if (currentStateSignature === lastRenderedStateJSON) {
+             return;
+        }
         
         lastRenderedStateJSON = currentStateSignature;
         
