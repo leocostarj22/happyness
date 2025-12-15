@@ -653,7 +653,7 @@ function initPlayer() {
             // DETECÇÃO DE RESET:
             // Se o status é setup/lobby, mas meu nome NÃO está na lista de jogadores do servidor,
             // significa que o Admin resetou o jogo. Precisamos forçar relogin.
-            if (currentPlayer && !state.players[currentPlayer]) {
+            if (currentPlayer && (!state.players || !state.players[currentPlayer])) {
                 alert("O jogo foi reiniciado pelo Administrador. Por favor, entre novamente.");
                 localStorage.removeItem('player_name');
                 currentPlayer = null;
@@ -666,9 +666,9 @@ function initPlayer() {
             document.getElementById('lobby-msg').innerText = "Aguardando o início...";
             
             // Forçar limpeza visual se vier de um estado anterior
-            if (lastRenderedStateJSON.includes('question')) {
-                 lastRenderedStateJSON = ''; // Força re-render completo
-            }
+            // AQUI ESTAVA O ERRO: Se a assinatura já foi salva lá em cima, ele achava que já tinha desenhado.
+            // Mas se viemos de 'question' para 'lobby', precisamos garantir que os elementos visuais sejam limpos.
+            
         } 
         else if (state.status === 'question') {
             // Se o tempo acabou, mostra mensagem de bloqueio
