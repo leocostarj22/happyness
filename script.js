@@ -585,6 +585,15 @@ function initPlayer() {
         if (success) {
             currentPlayer = name;
             localStorage.setItem('player_name', name);
+            
+            // Força a tela de Lobby imediatamente para dar feedback visual
+            showScreen('lobby');
+            document.getElementById('lobby-msg').innerText = "Aguardando o início...";
+            
+            // Limpa cache de renderização para garantir atualização
+            lastRenderedStateJSON = '';
+            
+            // Verifica estado real
             checkGameState();
         } else {
             alert("Erro ao entrar no jogo! Verifique sua conexão ou tente outro nome.");
