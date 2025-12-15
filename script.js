@@ -87,12 +87,23 @@ async function fetchServerState() {
                     // Sincroniza relógio se o servidor enviar o tempo
                     if (data.serverTime) {
                         serverTimeOffset = data.serverTime - Date.now();
+                        delete data.serverTime; // Remove para não poluir o estado e permitir comparação
                     }
-                    // Atualiza o cache local
-                    cachedState = data;
-                    // Dispara evento para atualizar telas
-                    window.dispatchEvent(new Event('server_update'));
+                    
+                    // DEEP COMPARE: Só dispara atualização se o estado REALMENTE mudou
+                    // Isso corrige o problema do dropdown fechando e melhora performance no mobile
+                    if (JSON.stringify(data) !== JSON.stringify(cachedState)) {
+                        cachedState = data;
+                        window.dispatchEvent(new Event('server_update'));
+                        console.log("Estado sincronizado e atualizado!");
+                    }
+                    
                     updateConnectionStatus('ok');
+                    
+                    // Feedback visual de "pulso" para indicar que o servidor respondeu
+                    connectionStatusEl.style.textShadow = '0 0 10px #fff';
+                    setTimeout(() => connectionStatusEl.style.textShadow = 'none', 200);
+
                 } else {
                     console.error("Dados inválidos do servidor:", data);
                 }
