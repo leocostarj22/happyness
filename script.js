@@ -992,8 +992,8 @@ function initDashboard() {
         // QR Code Logic
         const qrImg = document.getElementById('qr-code-img');
         if (qrImg && !qrImg.src.includes('api.qrserver')) {
-            // Tenta pegar a URL atual e trocar dashboard.html por player.html
-            const playerUrl = window.location.href.replace('dashboard.html', 'player.html');
+            // FIXO: URL de produção para garantir que celulares acessem a versão online
+            const playerUrl = 'https://www.gmcentral.pt/happyness/player.html';
             qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(playerUrl)}`;
         }
 
