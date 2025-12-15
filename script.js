@@ -610,80 +610,70 @@ function initPlayer() {
         e.target.disabled = true;
     });
 
-    // Variável para controlar o último estado renderizado e evitar loops desnecessários,
-    // mas permitindo atualizações críticas
-    let lastRenderedStateJSON = '';
+    // Variável para controlar o último estado renderizado (Apenas para o modo Pergunta)
+    let lastQuestionSignature = '';
 
     function checkGameState() {
         if (!currentPlayer) return showScreen('login');
 
         const state = getGameState();
         
-        // Verifica se o tempo acabou (10s Quiz / 30s Votação)
+        // Verifica se o tempo acabou
         const limitTime = state.mode === 'voting' ? 30 : 10;
         const now = Date.now() + serverTimeOffset; 
-        // Adiciona uma tolerância de 2 segundos para latência
         const elapsed = Math.max(0, (now - state.questionStartTime) / 1000);
         const timeIsUp = state.status === 'question' && elapsed >= (limitTime + 2);
 
-        // Criamos uma assinatura do estado atual focada no que impacta a UI
-        // Removemos questionStartTime para evitar re-render só pelo timer (se houvesse lógica de timer aqui)
-        const currentStateSignature = JSON.stringify({
-            status: state.status, 
-            qIndex: state.currentQuestionIndex,
-            mode: state.mode,
-            timeIsUp: timeIsUp,
-            // Só importa se o numero de jogadores mudar quando estamos no lobby ou votação
-            playersCount: (state.status === 'lobby' || (state.status === 'question' && state.mode === 'voting')) ? Object.keys(state.players).length : 0,
-            // Importante: se o jogador já respondeu, a tela muda para lobby
-            hasAnswered: state.currentQuestionIndex === lastAnsweredQuestionIndex,
-            // Importante: O nome do jogador atual deve fazer parte da assinatura para detectar login/logout
-            currentPlayer: currentPlayer
-        });
-
-        // SE o estado visual crítico é idêntico ao último renderizado, PARE AQUI.
-        // Isso impede que o dropdown feche na cara do usuário.
-        if (currentStateSignature === lastRenderedStateJSON) {
-             return;
-        }
+        // --- LÓGICA DE NAVEGAÇÃO ---
         
-        lastRenderedStateJSON = currentStateSignature;
-        
+        // 1. SETUP / LOBBY
         if (state.status === 'setup' || state.status === 'lobby') {
-            // DETECÇÃO DE RESET:
-            // Se o status é setup/lobby, mas meu nome NÃO está na lista de jogadores do servidor,
-            // significa que o Admin resetou o jogo. Precisamos forçar relogin.
+            lastQuestionSignature = ''; // Reseta assinatura ao sair da pergunta
+
+            // Detecção de Reset pelo Admin
             if (currentPlayer && (!state.players || !state.players[currentPlayer])) {
                 alert("O jogo foi reiniciado pelo Administrador. Por favor, entre novamente.");
                 localStorage.removeItem('player_name');
                 currentPlayer = null;
-                lastRenderedStateJSON = ''; // Força re-render
-                location.reload(); // Recarrega a página para limpar tudo
+                location.reload(); 
                 return;
             }
 
             showScreen('lobby');
             document.getElementById('lobby-msg').innerText = "Aguardando o início...";
-            
-            // Forçar limpeza visual se vier de um estado anterior
-            // AQUI ESTAVA O ERRO: Se a assinatura já foi salva lá em cima, ele achava que já tinha desenhado.
-            // Mas se viemos de 'question' para 'lobby', precisamos garantir que os elementos visuais sejam limpos.
-            
         } 
+        
+        // 2. PERGUNTA (Onde precisamos do Anti-Flicker)
         else if (state.status === 'question') {
-            // Se o tempo acabou, mostra mensagem de bloqueio
+            // Se tempo acabou, manda para lobby de espera
             if (timeIsUp) {
                 showScreen('lobby');
                 document.getElementById('lobby-msg').innerText = "Tempo encerrado. Aguarde a próxima pergunta.";
                 return;
             }
 
-            // Se já respondeu a pergunta ATUAL (pelo índice), mostra espera
+            // Se já respondeu, manda para lobby de espera
             if (state.currentQuestionIndex === lastAnsweredQuestionIndex) {
                 showScreen('lobby');
                 document.getElementById('lobby-msg').innerText = "Resposta enviada! Aguarde...";
                 return;
             }
+
+            // --- ANTI-FLICKER (Só aqui) ---
+            // Cria assinatura visual APENAS para a pergunta
+            const currentSignature = JSON.stringify({
+                qIndex: state.currentQuestionIndex,
+                mode: state.mode,
+                timeIsUp: timeIsUp,
+                playersCount: state.mode === 'voting' ? Object.keys(state.players).length : 0 // Só importa na votação
+            });
+
+            // Se nada visual mudou, NÃO redesenha (protege o dropdown)
+            if (currentSignature === lastQuestionSignature) {
+                return;
+            }
+            lastQuestionSignature = currentSignature;
+            // ------------------------------
 
             showScreen('game');
             const q = state.questions[state.currentQuestionIndex];
@@ -695,15 +685,12 @@ function initPlayer() {
             if (state.mode === 'voting') {
                 document.getElementById('btn-powerup').classList.add('hidden');
                 
-                // Dropdown com lista de jogadores (Re-lendo estado para garantir lista atualizada)
-                // Importante: Ler o estado mais recente direto do localStorage para garantir
+                // Dropdown com lista de jogadores
                 const freshState = getGameState();
-                
                 const select = document.createElement('select');
                 select.id = 'vote-select';
                 select.innerHTML = '<option value="">-- Escolha alguém --</option>';
                 
-                // Ordenar nomes para facilitar a busca
                 const playerNames = Object.keys(freshState.players).sort();
                 
                 if (playerNames.length === 0) {
@@ -720,10 +707,8 @@ function initPlayer() {
                     const selected = select.value;
                     if (!selected) return alert("Escolha alguém!");
                     
-                    // Feedback visual imediato antes de processar
                     btn.innerText = "Enviando...";
                     btn.disabled = true;
-                    
                     submitAnswer(selected);
                 };
 
@@ -742,12 +727,13 @@ function initPlayer() {
                 });
             }
         }
+        
+        // 3. RESULTADO / FIM
         else if (state.status === 'result') {
+            lastQuestionSignature = ''; // Reseta assinatura
             showScreen('feedback');
             
             if (state.mode === 'voting') {
-                // Mostra quem ganhou a votação (calculado no client, mas idealmente viria do server)
-                // Para simplificar, mostra apenas mensagem de sucesso
                 document.getElementById('feedback-screen').innerHTML = `
                     <h1>Voto Registrado!</h1>
                     <p>Olhe para o telão para ver o vencedor!</p>
@@ -762,6 +748,7 @@ function initPlayer() {
             }
         }
         else if (state.status === 'finished') {
+            lastQuestionSignature = '';
             showScreen('finished');
         }
     }
