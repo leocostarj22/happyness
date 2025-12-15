@@ -7,7 +7,7 @@ header('Pragma: no-cache');
 
 $file = 'data.json';
 
-// Limpa cache de status de arquivo do PHP
+// Limpa cache de status de arquivo do PHP para garantir leitura fresca
 clearstatcache();
 
 // Se o arquivo não existir, retorna erro ou cria um padrão
