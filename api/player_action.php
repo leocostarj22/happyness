@@ -3,23 +3,26 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 
+require_once 'db_connect.php';
+
 $input = json_decode(file_get_contents('php://input'), true);
 $action = $input['action'] ?? '';
 $data = $input['data'] ?? [];
 
-$file = 'data.json';
+try {
+    // INICIA TRANSAÇÃO PARA ATOMICIDADE
+    $pdo->beginTransaction();
 
-clearstatcache();
-
-// Abre para leitura e escrita
-$fp = fopen($file, 'r+');
-
-if (flock($fp, LOCK_EX)) {
-    // 1. Ler estado atual
-    $currentJson = stream_get_contents($fp);
-    $state = json_decode($currentJson, true);
+    // 1. Ler estado atual com BLOQUEIO (SELECT ... FOR UPDATE)
+    // Isso impede que outros scripts leiam/escrevam enquanto processamos
+    $stmt = $pdo->query("SELECT data FROM game_state WHERE id = 1 FOR UPDATE");
+    $row = $stmt->fetch();
     
-    // 2. Processar a ação
+    if (!$row) throw new Exception("Game state not found");
+    
+    $state = json_decode($row['data'], true);
+    
+    // 2. Processar a ação (Lógica de Negócio)
     if ($action === 'join') {
         $name = $data['name'];
         if (!isset($state['players'][$name])) {
@@ -57,18 +60,23 @@ if (flock($fp, LOCK_EX)) {
         }
     }
 
-    // 3. Salvar
-    ftruncate($fp, 0);
-    rewind($fp);
-    fwrite($fp, json_encode($state, JSON_PRETTY_PRINT));
+    // 3. Salvar Estado Atualizado
+    $newStateJson = json_encode($state, JSON_UNESCAPED_UNICODE);
     
-    flock($fp, LOCK_UN);
+    $updateStmt = $pdo->prepare("UPDATE game_state SET data = ? WHERE id = 1");
+    $updateStmt->execute([$newStateJson]);
+    
+    // Confirma transação
+    $pdo->commit();
+    
     echo json_encode(["success" => true, "newState" => $state]);
 
-} else {
+} catch (Exception $e) {
+    // Se der erro, desfaz tudo
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     http_response_code(500);
-    echo json_encode(["error" => "Server Busy"]);
+    echo json_encode(["error" => $e->getMessage()]);
 }
-
-fclose($fp);
 ?>

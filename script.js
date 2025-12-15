@@ -136,9 +136,14 @@ function getGameState() {
 
 // 2. Salvar estado (Apenas ADMIN usa isso para controlar o jogo)
 async function saveGameState(state) {
-    // Atualiza cache local imediatamente para feedback rápido
-    cachedState = state;
-    window.dispatchEvent(new Event('server_update'));
+    // REMOVIDO: Atualização otimista (cachedState = state).
+    // AGORA: O Admin só vê a mudança se o servidor confirmar.
+    // Isso evita a ilusão de que "funcionou" quando o servidor falhou.
+
+    const statusEl = document.getElementById('connection-status-text') || createStatusElement();
+    statusEl.innerText = "Salvando...";
+    statusEl.style.color = "yellow";
+    statusEl.style.display = "block";
 
     try {
         const res = await fetch(`${API_URL}admin_update.php`, {
@@ -146,11 +151,40 @@ async function saveGameState(state) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(state)
         });
-        if (!res.ok) throw new Error("Falha na escrita do arquivo");
+
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(`Erro HTTP ${res.status}: ${errText}`);
+        }
+
+        const json = await res.json();
+        if (json.error) {
+            throw new Error(`Erro API: ${json.error}`);
+        }
+
+        // Sucesso!
+        statusEl.innerText = "Salvo!";
+        statusEl.style.color = "#00ff88";
+        setTimeout(() => { statusEl.innerText = ""; statusEl.style.display = "none"; }, 2000);
+
+        // Atualiza cache local APÓS sucesso confirmado
+        cachedState = state;
+        window.dispatchEvent(new Event('server_update'));
+
     } catch (e) {
         console.error("Erro ao salvar:", e);
-        alert("ERRO AO SALVAR NO SERVIDOR! Verifique a conexão ou permissões.");
+        alert(`FALHA AO SALVAR NO SERVIDOR:\n${e.message}\n\nVerifique permissões de escrita na pasta 'api'.`);
+        statusEl.innerText = "Erro ao Salvar!";
+        statusEl.style.color = "red";
     }
+}
+
+function createStatusElement() {
+    const el = document.createElement('div');
+    el.id = 'connection-status-text';
+    el.style.cssText = "position:fixed; top:10px; right:10px; background:rgba(0,0,0,0.8); color:white; padding:5px 10px; border-radius:5px; z-index:10000; font-size:12px; font-weight:bold;";
+    document.body.appendChild(el);
+    return el;
 }
 
 // 3. Ações do Jogador (Atômicas para evitar conflitos)

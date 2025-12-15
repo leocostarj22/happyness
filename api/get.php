@@ -5,43 +5,28 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Cache-Control: post-check=0, pre-check=0', false);
 header('Pragma: no-cache');
 
-$file = 'data.json';
+require_once 'db_connect.php';
 
-// Limpa cache de status de arquivo do PHP para garantir leitura fresca
-clearstatcache();
+try {
+    $stmt = $pdo->query("SELECT data FROM game_state WHERE id = 1");
+    $row = $stmt->fetch();
 
-// Se o arquivo não existir, retorna erro ou cria um padrão
-if (!file_exists($file)) {
-    // Se não existe, cria um estado padrão
-    $defaultState = [
-        "status" => "setup",
-        "mode" => "quiz",
-        "leaderboardType" => "general",
-        "currentQuestionIndex" => 0,
-        "questionStartTime" => 0,
-        "questions" => [],
-        "currentVotes" => [],
-        "players" => [],
-        "settings" => [
-            "logo" => "",
-            "background" => "",
-            "welcomeMsg" => "🎉 BEM-VINDO À FESTA! 🎉"
-        ]
-    ];
-    file_put_contents($file, json_encode($defaultState));
-    chmod($file, 0666);
-}
-
-// Lê o arquivo, adiciona o timestamp do servidor e retorna
-$content = file_get_contents($file);
-$data = json_decode($content, true);
-
-if ($data) {
-    // Adiciona o tempo atual do servidor (em ms) para sincronização
-    $data['serverTime'] = round(microtime(true) * 1000);
-    echo json_encode($data);
-} else {
-    // Se falhar o decode, retorna o conteúdo original (fallback)
-    echo $content;
+    if ($row) {
+        $data = json_decode($row['data'], true);
+        if ($data) {
+            // Adiciona o tempo atual do servidor (em ms) para sincronização
+            $data['serverTime'] = round(microtime(true) * 1000);
+            echo json_encode($data);
+        } else {
+             // Fallback se JSON estiver corrompido
+             echo $row['data'];
+        }
+    } else {
+        // Se a tabela estiver vazia (caso raro após criação), retorna erro ou cria
+        echo json_encode(["error" => "No game state found"]);
+    }
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
 }
 ?>

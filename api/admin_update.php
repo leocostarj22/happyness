@@ -3,6 +3,8 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 
+require_once 'db_connect.php';
+
 // 1. Recebe os novos dados do Admin
 $json = file_get_contents('php://input');
 $newData = json_decode($json, true);
@@ -13,37 +15,15 @@ if (!$newData) {
     exit;
 }
 
-$file = 'data.json';
-
-// Limpa cache de status
-clearstatcache();
-
-// Tenta criar o arquivo se não existir
-if (!file_exists($file)) {
-    file_put_contents($file, json_encode($newData));
-    chmod($file, 0666); // Permissão de leitura/escrita para todos
-}
-
-// 2. Salva no arquivo de forma segura (Lock)
-$fp = fopen($file, 'w');
-if ($fp) {
-    if (flock($fp, LOCK_EX)) {
-        $writeResult = fwrite($fp, json_encode($newData, JSON_PRETTY_PRINT));
-        flock($fp, LOCK_UN);
-        
-        if ($writeResult !== false) {
-            echo json_encode(["success" => true]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Write failed"]);
-        }
-    } else {
-        http_response_code(500);
-        echo json_encode(["error" => "Could not lock file"]);
-    }
-    fclose($fp);
-} else {
+try {
+    // 2. Salva no Banco de Dados
+    // O ID é sempre 1 pois é um jogo single-instance
+    $stmt = $pdo->prepare("UPDATE game_state SET data = ? WHERE id = 1");
+    $stmt->execute([json_encode($newData, JSON_UNESCAPED_UNICODE)]);
+    
+    echo json_encode(["success" => true]);
+} catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(["error" => "Could not open file for writing. Check permissions."]);
+    echo json_encode(["error" => "Database Error: " . $e->getMessage()]);
 }
 ?>
