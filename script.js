@@ -195,7 +195,19 @@ async function sendPlayerAction(action, data) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action, data })
         });
+        
+        if (!res.ok) {
+            console.error("Erro HTTP:", res.status, await res.text());
+            return false;
+        }
+
         const json = await res.json();
+        
+        if (json.error) {
+             console.error("Erro API:", json.error);
+             return false;
+        }
+
         if (json.success && json.newState) {
             cachedState = json.newState;
             window.dispatchEvent(new Event('server_update'));
@@ -559,16 +571,22 @@ function initPlayer() {
         
         // Bloqueia botão
         const btn = document.getElementById('btn-join');
+        const originalText = btn.innerText;
         btn.disabled = true;
         btn.innerText = "Entrando...";
 
-        // Envia ação para o servidor
-        await sendPlayerAction('join', { name: name });
+        // Envia ação para o servidor e VERIFICA SUCESSO
+        const success = await sendPlayerAction('join', { name: name });
 
-        currentPlayer = name;
-        localStorage.setItem('player_name', name);
-        
-        checkGameState();
+        if (success) {
+            currentPlayer = name;
+            localStorage.setItem('player_name', name);
+            checkGameState();
+        } else {
+            alert("Erro ao entrar no jogo! Verifique sua conexão ou tente outro nome.");
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
     });
 
     // Power-up
