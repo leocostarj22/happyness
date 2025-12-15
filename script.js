@@ -1,7 +1,11 @@
 // --- CONFIGURAÇÃO GLOBAL ---
-// Detecta a URL base automaticamente para evitar problemas de caminho relativo (ex: /happyness/dashboard.html -> /happyness/api/)
-const API_BASE = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-const API_URL = API_BASE + 'api/'; 
+// FORÇAR USO DO SERVIDOR DE PRODUÇÃO
+// Isso garante que mesmo se abrir o arquivo localmente no PC, ele conecta no banco oficial.
+const API_URL = 'https://www.gmcentral.pt/happyness/api/'; 
+
+// const API_BASE = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+// const API_URL = API_BASE + 'api/'; 
+ 
 
 let cachedState = null; // Estado em memória sincronizado com o servidor
 let serverTimeOffset = 0; // Sincronização de relógio (Server Time - Local Time)
