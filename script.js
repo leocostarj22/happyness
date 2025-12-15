@@ -163,11 +163,30 @@ async function sendPlayerAction(action, data) {
 }
 
 // Resetar Jogo (Admin)
-function resetGame() {
-    const state = JSON.parse(JSON.stringify(initialGameState)); // Clone
+async function resetGame() {
+    if (!confirm("ATENÇÃO: Isso apagará TODOS os dados, jogadores, perguntas e placar.\n\nO sistema voltará ao estado original de fábrica.\n\nDeseja continuar?")) return;
+
+    const btn = document.getElementById('btn-reset');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Apagando Sistema...";
+    }
+
+    const state = JSON.parse(JSON.stringify(initialGameState)); // Clone do estado limpo
     state.status = 'setup';
-    saveGameState(state);
-    setTimeout(() => location.reload(), 500);
+    
+    try {
+        await saveGameState(state);
+        // Aguarda um pouco mais para garantir que todos os clientes recebam o sinal antes do admin recarregar
+        setTimeout(() => location.reload(), 1000);
+    } catch (error) {
+        console.error("Erro ao resetar:", error);
+        alert("Erro ao resetar o sistema. Tente novamente.");
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = "Resetar Tudo (CUIDADO)";
+        }
+    }
 }
 
 // --- LÓGICA DO ADMIN ---
